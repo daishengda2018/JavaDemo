@@ -72,16 +72,19 @@ class HashMap<K, V> implements Map<K, V> {
         if (table == null || length == 0) {
             length = (table = resize()).length;
         }
-        // 计算索引
+        // 计算索引 - 计算索引是个重点！！！！
         int index = indexFor(hash, length);
-        // 如果当前位置没有使用过，支持创建 Node 存储
+        // 如果当前位置没有使用过，直接创建 Node 存储
         if (table[index] == null) {
             table[index] = newNode(hash, key, value, null);
         } else {
-            // hash 冲突
-            return putOnHashCollision(table, table[index], hash, key, value);
+            // hash 冲突函数
+            V result = putOnHashCollision(table, table[index], hash, key, value);
+            if (result != null) {
+                return result;
+            }
         }
-
+        // 记录修改的次数，如果在遍历数据的过程中 mModCount 数量前后不一致则立即抛出 ConcurrentModificationException 异常
         ++mModCount;
         if (++mSize > mResizeThreshold) {
             // 查过了阈值，扩容为当前容量的二倍
@@ -119,6 +122,7 @@ class HashMap<K, V> implements Map<K, V> {
                 curNode = linkedNode;
             }
         }
+        // 更新老值
         if (linkedNode != null) {
             V oldValue = curNode.value;
             linkedNode.value = value;
